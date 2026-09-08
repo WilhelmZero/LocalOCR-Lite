@@ -1,0 +1,20 @@
+{
+  "code_vl": {
+    "repository": "snnh/paddleocr_vl_code_ocr",
+    "revision": "bdf898bb154a7b1cdfb74ae6cab39bf7e13277e7",
+    "weights_sha256": "8a71a9cc544c4145c52fcebde97dc125cab68cfd6ea87ec31b2c8b3742cea6e2",
+    "model_version": "v6",
+    "license": "Apache-2.0",
+    "runtime": "paddlex==3.7.2 / paddlepaddle-gpu==3.3.1",
+    "engine": "paddle_dynamic",
+    "remote_python_code": false,
+    "prompt": "OCR:",
+    "max_new_tokens": 4096,
+    "max_pixels": 1638400,
+    "batch_size": 1,
+    "decoding": "native greedy; use_cache true",
+    "repetition_penalty": "not supported by native PaddleX; not applied",
+    "verified_devices": ["Windows RTX 3050 6GB", "Windows CPU"],
+    "dependencies": "requirements.lock.txt"
+  }
+}
