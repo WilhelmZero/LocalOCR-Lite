@@ -27,6 +27,8 @@
 
 本项目没有已签名或公证的 macOS `.app`。不要把提供安装脚本理解为完成了全部跨平台测试。
 
+Apple Silicon 独立应用的 DMG 构建方法见 [MAC_DMG.md](MAC_DMG.md)。应用自带 Python，使用者无需安装系统 Python；仍需在 Mac 上构建和完成真机验收。
+
 ## Windows 快速开始
 
 1. 安装 **64 位 Python 3.12**，可从 [Python 官网](https://www.python.org/downloads/) 获取。

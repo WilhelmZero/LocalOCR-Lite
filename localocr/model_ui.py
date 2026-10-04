@@ -21,7 +21,10 @@ class ModelDialog(QDialog):
         if sys.platform=='win32':self.device.addItem('NVIDIA GPU（Windows，可额外下载数 GB）','gpu')
         layout.addWidget(self.device)
         self.dependencies=QCheckBox('同时安装所选功能的运行依赖')
-        self.dependencies.setChecked(importlib.util.find_spec('pip') is not None)
+        self.dependencies.setChecked(not getattr(sys, 'frozen', False) and importlib.util.find_spec('pip') is not None)
+        if getattr(sys, 'frozen', False):
+            self.dependencies.setText('运行依赖已包含在应用中')
+            self.dependencies.setEnabled(False)
         layout.addWidget(self.dependencies)
         self.state=QLabel();layout.addWidget(self.state)
         self.log=QPlainTextEdit();self.log.setReadOnly(True);layout.addWidget(self.log,1)
@@ -42,19 +45,22 @@ class ModelDialog(QDialog):
             commands=installation_commands(self.feature.currentData(),self.device.currentData())
         except ValueError as exc:self.state.setText(str(exc));return
         self.window.queue.stop_process()
-        self.pending=deque(commands if self.dependencies.isChecked() else commands[-1:])
+        if getattr(sys, 'frozen', False):
+            self.pending=deque([['--model-setup',self.feature.currentData(),'--device',self.device.currentData()]])
+        else:
+            self.pending=deque(commands if self.dependencies.isChecked() else commands[-1:])
         self.start.setEnabled(False);self.feature.setEnabled(False);self.device.setEnabled(False);self.dependencies.setEnabled(False)
         self.log.clear();self.next()
 
     def next(self):
         if not self.pending:
             self.unlock();self.state.setText('完成；运行环境和所选模型已通过本机推理检查。');return
-        args=self.pending.popleft();self.log.appendPlainText('> Python '+' '.join(args))
+        args=self.pending.popleft();self.log.appendPlainText('> '+('LocalOCR' if getattr(sys,'frozen',False) else 'Python')+' '+' '.join(args))
         process=QProcess(self);self.process=process
         process.setProgram(os.environ.get('LOCAL_OCR_PYTHON',sys.executable));process.setArguments(args)
         from pathlib import Path
         process.setWorkingDirectory(str(Path(__file__).resolve().parent.parent))
-        env=QProcessEnvironment.systemEnvironment();env.insert('PYTHONUTF8','1');env.insert('PYTHONIOENCODING','utf-8')
+        env=QProcessEnvironment.systemEnvironment();env.insert('PYTHONUTF8','1');env.insert('PYTHONIOENCODING','utf-8');env.insert('PYTHONUNBUFFERED','1')
         env.insert('LOCAL_OCR_DATA',str(self.window.data_dir));process.setProcessEnvironment(env)
         process.setProcessChannelMode(QProcess.ProcessChannelMode.MergedChannels)
         process.readyReadStandardOutput.connect(lambda:self.log.appendPlainText(bytes(process.readAllStandardOutput()).decode('utf-8',errors='replace')))
@@ -70,7 +76,8 @@ class ModelDialog(QDialog):
         else:self.next()
 
     def unlock(self):
-        for widget in (self.start,self.feature,self.device,self.dependencies):widget.setEnabled(True)
+        for widget in (self.start,self.feature,self.device):widget.setEnabled(True)
+        if not getattr(sys,'frozen',False):self.dependencies.setEnabled(True)
 
     def cancel(self):
         self.pending.clear()
